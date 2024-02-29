@@ -1,4 +1,1 @@
-fun main() {
-
-    println(ChatService.deleteChat(2))
-}
+fun main() {}
