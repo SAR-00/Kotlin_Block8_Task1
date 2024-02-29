@@ -3,44 +3,25 @@ object ChatService {
     var chats = mutableListOf<Chat>()
     private var messageId = 0
 
-    private fun createChat(
-        chatId: Int,
-        message: Message
-    ): Int {
-
-        val chat = Chat(chatId)
-        chat.messages += message
-        chats += chat
-
-        return 1
-    }
 
     fun deleteChat(chatId: Int): Int {
-        try {
-            chats.remove(chats.first { it.chatId == chatId })
 
-        } catch (exception: NoSuchElementException) {
-            throw NotFoundException("Чат с id $chatId не найден")
-
-        }
+        chats.firstOrNull { it.chatId == chatId }
+            .let { chats.remove(it ?: throw NotFoundException("Чат с id $chatId не найден")) }
 
         return 1
     }
+
 
     fun get_Chats(): List<Chat> = chats
 
-    fun getUnreadChatsCount(): Int {
 
-           return chats.filter {
-                try {
-                    !it.messages.last().read
+    fun getUnreadChatsCount(): Int =
 
-                } catch (exception: NoSuchElementException) { //Обработка пустого чата
-                    false
+        chats.filter { it.messages.isNotEmpty() }
+            .filter { !it.messages.last().read }
+            .size
 
-                }
-            }.size
-    }
 
     fun createMessage(
         userId: Int,
@@ -51,10 +32,12 @@ object ChatService {
         val message = Message(userId, ++messageId, text, false)
 
         chats.find { it.chatId == chatId }
-            ?.messages?.add(message) ?: return createChat(chatId, message)
+            ?.messages?.add(message)
+            ?: chats.add(Chat(chatId, mutableListOf(message)))
 
         return 1
     }
+
 
     fun editMessage(
         chatId: Int,
@@ -62,82 +45,48 @@ object ChatService {
         text: String
     ): Int {
 
-        try {
-            chats.first { it.chatId == chatId }
-                .messages.first { it.messageId == messageId }
-                .text = text
-
-        } catch (exception: NoSuchElementException) {
-            throw NotFoundException("Чат или сообщение не найдены")
-
-        }
+        chats.firstOrNull { it.chatId == chatId }
+            .let { it?.messages ?: throw NotFoundException("Чат c id $chatId не найден") }
+            .firstOrNull { it.messageId == messageId }
+            .let { it?.copy(text = text) ?: throw NotFoundException("Сообщение с id $messageId не найдено") }
 
         return 1
     }
+
 
     fun deleteMessage(
         chatId: Int,
         messageId: Int
     ): Int {
 
-        try {
-            val chat = chats.first { it.chatId == chatId }
-            val message = chat.messages.first { it.messageId == messageId }
+        val message = chats.firstOrNull { it.chatId == chatId }
+            .let { it?.messages ?: throw NotFoundException("Чат с id $chatId не найден") }
+            .firstOrNull { it.messageId == messageId }
+            .let { it ?: throw NotFoundException("Сообщение с id $messageId не найдено") }
 
-            chats.first { it.chatId == chatId }.messages.remove(message)
-
-        } catch (exception: NoSuchElementException) {
-            throw NotFoundException("Чат или сообщение не найдены")
-
-        }
+        chats.first { it.chatId == chatId }.messages.remove(message)
 
         return 1
     }
 
-    fun getLastMessagesFromAllChats(): List<String> {
 
-        val messages = mutableListOf<String>()
+    fun getLastMessagesFromAllChats(): List<String> =
+        chats.map { it.messages.lastOrNull()?.text ?: "Нет сообщений" }
 
-        try {
-            chats.forEach { messages += it.messages.last().text }
 
-        } catch (exception: NoSuchElementException) {
-            messages += "Нет сообщений"
-
-        }
-
-        return messages
-    }
-
-    fun getAllMessagesByChatId(
+    fun getMessagesByChatId(
         chatId: Int,
         messageCount: Int
-    ): List<String> {
+    ): List<String> =
 
-        val messages = mutableListOf<String>()
-        var count = messageCount
+        chats.firstOrNull { it.chatId == chatId }
+            .let { it?.messages ?: throw NotFoundException("Чат с id $chatId не найден") }
+            .asSequence()
+            .take(messageCount)
+            .ifEmpty { throw NotFoundException("Сообщения не найдены") }
+            .map { it.text }
+            .toList()
 
-        try {
-            val chat = chats.first { it.chatId == chatId }.messages
-
-            chat.forEach {
-
-                if (count == 0) {
-                    return@forEach
-                }
-
-                it.read = true
-                messages += it.text
-                count--
-            }
-
-        } catch (exception: NoSuchElementException) {
-            throw NotFoundException("Чат c id $chatId не найден")
-
-        }
-
-        return messages
-    }
 
     fun clear() {
         chats = mutableListOf()
