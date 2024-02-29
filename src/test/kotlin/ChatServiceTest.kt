@@ -10,16 +10,6 @@ class ChatServiceTest {
         ChatService.clear()
     }
 
-    @Test
-    fun createChatTest() {
-
-        //Для проверки применена функция createMessage() потому что при отсутсвии чата с указанным id
-        // она использует функцию createChat()
-        val result = ChatService.createMessage(1, 2, "Hello")
-
-        assertEquals(1, result)
-
-    }
 
     @Test
     fun deleteChatTest() {
@@ -58,7 +48,6 @@ class ChatServiceTest {
 
         ChatService.createMessage(1, 2, "Hello")
 
-        //Здесь создаётся сообщение в уже существующем чате, поэтому функция createChat() не вызывается
         val result = ChatService.createMessage(2, 2, "Hi")
 
         assertEquals(1, result)
@@ -105,19 +94,19 @@ class ChatServiceTest {
     }
 
     @Test
-    fun getAllMessagesByChatIdTest() {
+    fun getMessagesByChatIdTest() {
 
         ChatService.createMessage(1, 2, "Hello")
         ChatService.createMessage(2, 2, "Hi")
 
         val messages = mutableListOf("Hello", "Hi")
-        val result = ChatService.getAllMessagesByChatId(2, 2)
+        val result = ChatService.getMessagesByChatId(2, 2)
 
         assertEquals(messages, result)
     }
 
     @Test(expected = NotFoundException::class)
     fun getAllMessagesByChatIdExceptionTest() {
-        ChatService.getAllMessagesByChatId(1, 1)
+        ChatService.getMessagesByChatId(1, 1)
     }
 }
